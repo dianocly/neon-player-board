@@ -170,6 +170,52 @@
     els.board.replaceChildren(frag);
   }
 
+  // ADD: compute a staggered “diamond lattice” layout and set board height
+function layoutBoard() {
+  const tiles = Array.from(els.board.querySelectorAll(".tile"));
+  const n = tiles.length;
+
+  if (!n) {
+    els.board.style.height = "0px";
+    return;
+  }
+
+  const size = state.settings.tileSize;
+  const compact = state.settings.compactMode;
+
+  // Spacing tuning: overlap vertically to create the diamond pattern
+  const stepX = size * (compact ? 0.92 : 0.98);
+  const stepY = size * (compact ? 0.68 : 0.74);
+
+  const boardW = els.board.clientWidth;
+
+  // columns that fit (account for the half-step offset on odd rows)
+  let cols = Math.max(2, Math.floor((boardW - size - stepX * 0.5) / stepX) + 1);
+  cols = Math.min(cols, n);
+
+  const contentW = (cols - 1) * stepX + size + stepX * 0.5;
+  const x0 = Math.max(0, (boardW - contentW) / 2);
+
+  for (let i = 0; i < n; i++) {
+    const r = Math.floor(i / cols);
+    const c = i % cols;
+
+    const x = x0 + c * stepX + (r % 2) * (stepX * 0.5);
+    const y = r * stepY;
+
+    tiles[i].style.setProperty("--x", `${x}px`);
+    tiles[i].style.setProperty("--y", `${y}px`);
+
+    // upper rows visually on top (nice overlap ordering)
+    tiles[i].style.zIndex = String(1000 - r);
+  }
+
+  const rows = Math.ceil(n / cols);
+  const h = (rows - 1) * stepY + size;
+  els.board.style.height = `${Math.ceil(h)}px`;
+}
+
+
   function renderPlayerList() {
     const frag = document.createDocumentFragment();
 
@@ -223,11 +269,16 @@
     els.playerList.replaceChildren(frag);
   }
 
-  function renderAll() {
-    applyTheme();
-    renderBoard();
-    renderPlayerList();
-  }
+ function renderAll() {
+  applyTheme();
+  renderBoard();
+  layoutBoard(); // ADD: stagger tiles after rendering them
+  renderPlayerList();
+}
+
+  // ADD: keep layout correct when the viewport changes
+window.addEventListener("resize", () => layoutBoard());
+
 
   /** ---------------------------
    * Events
@@ -238,9 +289,11 @@
   });
 
   els.tileSize.addEventListener("input", () => {
-    state.settings.tileSize = clamp(Number(els.tileSize.value), 90, 220);
-    applyTheme();
-  });
+  state.settings.tileSize = clamp(Number(els.tileSize.value), 90, 220);
+  applyTheme();
+  layoutBoard(); // ADD: reposition tiles immediately
+});
+
   els.tileSize.addEventListener("change", () => saveStateDebounced());
 
   els.compactMode.addEventListener("change", () => {
