@@ -229,23 +229,31 @@ code{
 }
 
 .board{
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--tileSize), 1fr));
-  gap: var(--gap);
-  align-items:start;
-  justify-items:center;
+  /* REPLACE: grid layout with absolute layout so we can stagger rows into a diamond lattice */
+  position: relative;
+  display: block;
   padding: 10px 4px 6px;
+  min-height: 120px; /* will be overridden dynamically by JS */
 }
 
+
 .tile{
+  /* REPLACE: make each tile absolutely positioned so JS can stagger rows */
+  position: absolute;
+  top: 0;
+  left: 0;
+
   width: var(--tileSize);
   height: var(--tileSize);
-  transform: rotate(45deg);
+
+  /* REPLACE: translate is injected by JS via CSS vars, THEN rotate into a diamond */
+  transform: translate(var(--x, 0px), var(--y, 0px)) rotate(45deg);
+  will-change: transform;
+
   border-radius: 12px;
-  position: relative;
-  overflow:hidden;
-  cursor:pointer;
-  user-select:none;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
   border: 1px solid rgba(255,255,255,0.12);
 
   box-shadow:
@@ -254,6 +262,7 @@ code{
     0 0 calc(30px * var(--glowStrength)) rgba(255,62,156,0.10);
   background: rgba(255,255,255,0.03);
 }
+
 
 .tile::before{
   content:"";
@@ -298,20 +307,23 @@ code{
 }
 
 .tile__hud{
+  /* REPLACE: dynamic padding keeps HUD away from the clipped corners */
   position:absolute;
   inset:0;
-  padding: 10px 10px 12px;
+  padding: clamp(10px, calc(var(--tileSize) * 0.13), 18px);
   display:flex;
   flex-direction:column;
   justify-content:space-between;
   pointer-events:none;
 }
 
+
 .tile__numWrap{
   align-self:flex-start;
   padding: 6px 8px;
   border-radius: 10px;
   background: rgba(0,0,0,0.40);
+  max-width: calc(var(--tileSize) * 0.72);
   border: 1px solid rgba(255,255,255,0.14);
   box-shadow:
     0 8px 18px rgba(0,0,0,0.25),
@@ -319,16 +331,20 @@ code{
 }
 
 .tile__num{
+  /* REPLACE: scale number with tile size so it doesn't look huge or clip */
   font-family: Orbitron, ui-sans-serif, system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: 0.08em;
-  font-size: 24px;
+
+  font-size: clamp(14px, calc(var(--tileSize) * 0.17), 24px);
+
   color: var(--neonGreen);
   text-shadow:
     0 0 10px rgba(76,255,106,0.55),
     0 0 18px rgba(76,255,106,0.30);
   line-height: 1;
 }
+
 
 .tile__name{
   align-self:flex-start;
