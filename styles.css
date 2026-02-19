@@ -307,15 +307,16 @@ code{
 }
 
 .tile__hud{
-  /* REPLACE: dynamic padding keeps HUD away from the clipped corners */
+  /* REPLACE: more inward padding so numbers don't get cut by the top diamond point */
   position:absolute;
   inset:0;
-  padding: clamp(10px, calc(var(--tileSize) * 0.13), 18px);
+  padding: clamp(12px, calc(var(--tileSize) * 0.18), 22px);
   display:flex;
   flex-direction:column;
   justify-content:space-between;
   pointer-events:none;
 }
+
 
 
 .tile__numWrap{
@@ -336,7 +337,8 @@ code{
   font-weight: 700;
   letter-spacing: 0.08em;
 
-  font-size: clamp(14px, calc(var(--tileSize) * 0.17), 24px);
+  font-size: clamp(12px, calc(var(--tileSize) * 0.15), 20px);
+
 
   color: var(--neonGreen);
   text-shadow:
