@@ -8,6 +8,8 @@
   --tileSize: 160px;
   --gap: 18px;
   --glowStrength: 1;
+    /* ADD: the *visible* diamond size (point-to-point) */
+  --diamondSize: 226px;
 
   --panelW: 420px;
 
@@ -238,17 +240,20 @@ code{
 
 
 .tile{
-  /* REPLACE: make each tile absolutely positioned so JS can stagger rows */
+  /* REPLACE: center-based positioning (so rotation doesn't distort placement math) */
   position: absolute;
-  top: 0;
-  left: 0;
+  left: var(--cx, 0px);  /* ADD */
+  top:  var(--cy, 0px);  /* ADD */
 
   width: var(--tileSize);
   height: var(--tileSize);
 
-  /* REPLACE: translate is injected by JS via CSS vars, THEN rotate into a diamond */
-  transform: translate(var(--x, 0px), var(--y, 0px)) rotate(45deg);
+  /* REPLACE: pin the tile's CENTER to (cx, cy), then rotate */
+  transform: translate(-50%, -50%) rotate(45deg);
+  transform-origin: center;
   will-change: transform;
+
+  /* ...keep the rest of your tile styling below... */
 
   border-radius: 12px;
   overflow: hidden;
@@ -310,7 +315,9 @@ code{
   /* REPLACE: more inward padding so numbers don't get cut by the top diamond point */
   position:absolute;
   inset:0;
-  padding: clamp(12px, calc(var(--tileSize) * 0.18), 22px);
+    /* REPLACE: base padding on visible diamond size */
+  padding: clamp(12px, calc(var(--diamondSize) * 0.12), 22px);
+
   display:flex;
   flex-direction:column;
   justify-content:space-between;
@@ -337,7 +344,9 @@ code{
   font-weight: 700;
   letter-spacing: 0.08em;
 
-  font-size: clamp(12px, calc(var(--tileSize) * 0.15), 20px);
+    /* REPLACE: size number based on visible diamond size */
+  font-size: clamp(12px, calc(var(--diamondSize) * 0.09), 20px);
+
 
 
   color: var(--neonGreen);
