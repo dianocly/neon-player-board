@@ -180,28 +180,38 @@ function layoutBoard() {
     return;
   }
 
-  const size = state.settings.tileSize;
+    const size = state.settings.tileSize;
   const compact = state.settings.compactMode;
 
-  // Spacing tuning: overlap vertically to create the diamond pattern
-  const stepX = size * (compact ? 0.92 : 0.98);
-  const stepY = size * (compact ? 0.68 : 0.74);
+  // REPLACE: true diamond lattice spacing
+  // tileSize is the diamond's bounding box (width/height). For a rotated square,
+  // edge-to-edge tiling happens at bbox / sqrt(2).
+  const base = size / Math.SQRT2; // ~0.707 * size
+
+  // Small extra spacing so it doesn't look cramped (tuneable)
+  const pad = compact ? 2 : 6;
+
+  const stepX = base + pad;       // horizontal center-to-center
+  const stepY = base + pad;       // vertical center-to-center
+  const offsetX = stepX / 2;      // odd-row stagger
 
   const boardW = els.board.clientWidth;
 
+
   // columns that fit (account for the half-step offset on odd rows)
-  let cols = Math.max(2, Math.floor((boardW - size - stepX * 0.5) / stepX) + 1);
+    let cols = Math.max(2, Math.floor((boardW - size - offsetX) / stepX) + 1);
   cols = Math.min(cols, n);
 
-  const contentW = (cols - 1) * stepX + size + stepX * 0.5;
+  const contentW = (cols - 1) * stepX + size + offsetX;
   const x0 = Math.max(0, (boardW - contentW) / 2);
 
   for (let i = 0; i < n; i++) {
     const r = Math.floor(i / cols);
     const c = i % cols;
 
-    const x = x0 + c * stepX + (r % 2) * (stepX * 0.5);
+    const x = x0 + c * stepX + (r % 2) * offsetX;
     const y = r * stepY;
+
 
     tiles[i].style.setProperty("--x", `${x}px`);
     tiles[i].style.setProperty("--y", `${y}px`);
@@ -269,12 +279,16 @@ function layoutBoard() {
     els.playerList.replaceChildren(frag);
   }
 
- function renderAll() {
+function renderAll() {
   applyTheme();
   renderBoard();
-  layoutBoard(); // ADD: stagger tiles after rendering them
+
+  // REPLACE: layout after the browser computes sizes
+  requestAnimationFrame(() => layoutBoard());
+
   renderPlayerList();
 }
+
 
   // ADD: keep layout correct when the viewport changes
 window.addEventListener("resize", () => layoutBoard());
