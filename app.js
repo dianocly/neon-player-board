@@ -117,8 +117,18 @@
    * Rendering
    * --------------------------*/
   function applyTheme() {
-    document.documentElement.style.setProperty("--tileSize", `${state.settings.tileSize}px`);
-    els.tileSizeValue.textContent = `${state.settings.tileSize}px`;
+  // REPLACE: slider value is the visible diamond size D (point-to-point)
+  const D = state.settings.tileSize;
+
+  // square side a = D / sqrt(2)
+  const a = Math.round(D / Math.SQRT2);
+
+  // ADD: expose both vars
+  document.documentElement.style.setProperty("--diamondSize", `${D}px`);
+  document.documentElement.style.setProperty("--tileSize", `${a}px`);
+
+  els.tileSizeValue.textContent = `${D}px`;
+
     document.body.classList.toggle("compact", state.settings.compactMode);
 
     els.tileSize.value = String(state.settings.tileSize);
@@ -171,6 +181,7 @@
   }
 
   // ADD: compute a staggered “diamond lattice” layout and set board height
+// REPLACE ENTIRE FUNCTION: staggered diamond lattice using visible diamond size D
 function layoutBoard() {
   const tiles = Array.from(els.board.querySelectorAll(".tile"));
   const n = tiles.length;
@@ -179,6 +190,51 @@ function layoutBoard() {
     els.board.style.height = "0px";
     return;
   }
+
+  const D = state.settings.tileSize;          // visible diamond size (point-to-point)
+  const compact = state.settings.compactMode;
+
+  // Optional spacing "gap" while preserving correct lattice geometry
+  const g = compact ? 2 : 6;
+
+  const dx = D + g;          // center-to-center horizontally
+  const dy = dx / 2;         // correct staggered-row vertical step
+  const offset = dx / 2;     // odd-row horizontal offset
+
+  const boardW = els.board.clientWidth;
+
+  // How many columns fit (account for stagger width)
+  // contentW = (cols-1)*dx + D + offset
+  let cols = Math.floor((boardW - D - offset) / dx) + 1;
+  cols = Math.max(1, Math.min(cols, n));
+
+  const contentW = (cols - 1) * dx + D + offset;
+
+  // Start centers so the whole set is centered, with half-diamond margin
+  const xStart = Math.max(D / 2, (boardW - contentW) / 2 + D / 2);
+  const yStart = D / 2;
+
+  for (let i = 0; i < n; i++) {
+    const r = Math.floor(i / cols);
+    const c = i % cols;
+
+    const cx = xStart + c * dx + (r % 2) * offset;
+    const cy = yStart + r * dy;
+
+    tiles[i].style.setProperty("--cx", `${cx}px`);
+    tiles[i].style.setProperty("--cy", `${cy}px`);
+
+    // upper rows on top visually (nice overlap)
+    tiles[i].style.zIndex = String(1000 - r);
+  }
+
+  const rows = Math.ceil(n / cols);
+
+  // total height = D + (rows-1)*dy (since yStart = D/2)
+  const h = D + (rows - 1) * dy;
+  els.board.style.height = `${Math.ceil(h)}px`;
+}
+
 
     const size = state.settings.tileSize;
   const compact = state.settings.compactMode;
@@ -283,7 +339,7 @@ function renderAll() {
   applyTheme();
   renderBoard();
 
-  // REPLACE: layout after the browser computes sizes
+  // REPLACE: run layout after DOM paints so board width is correct
   requestAnimationFrame(() => layoutBoard());
 
   renderPlayerList();
@@ -305,8 +361,9 @@ window.addEventListener("resize", () => layoutBoard());
   els.tileSize.addEventListener("input", () => {
   state.settings.tileSize = clamp(Number(els.tileSize.value), 90, 220);
   applyTheme();
-  layoutBoard(); // ADD: reposition tiles immediately
+  layoutBoard(); // ADD
 });
+
 
   els.tileSize.addEventListener("change", () => saveStateDebounced());
 
